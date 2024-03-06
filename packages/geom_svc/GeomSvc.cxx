@@ -838,6 +838,8 @@ double GeomSvc::getInterceptionFast(int detectorID, double tx, double ty, double
     return (tx*planes[detectorID].zc + x0)*planes[detectorID].costheta + (ty*planes[detectorID].zc + y0)*planes[detectorID].sintheta;
 }
 
+//E: This function take the detector's ID and the wire's ID as the first two arguments, which uniquely defines a straght line, and the four parameters of the tracklet
+//as the next four arguments, which uniquely defines another straght line. The function returns the distance of this two lines. 
 double GeomSvc::getDCA(int detectorID, int elementID, double tx, double ty, double x0, double y0)
 {
     TVector3 trkp0(x0, y0, 0.);
