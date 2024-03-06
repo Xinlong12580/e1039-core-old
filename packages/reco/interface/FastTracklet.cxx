@@ -742,6 +742,7 @@ double Tracklet::getMomentum() const
  * is _not_ guaranteed to be valid when the FMag and/or KMag field strength
  * is changed largely.
  */
+//E: return the charge belong to the particle. tx is the x slope in st2 and st3, x0 is the intersection for z=0. Don't really understand how it works
 int Tracklet::getCharge() const
 {
     return -3e-3 * copysign(1.0, FMAGSTR) * x0 < tx  ?  +1  :  -1;
