@@ -99,33 +99,7 @@ namespace
     }
 }
 
-//Signed hit definition
-SignedHit::SignedHit() : sign(0)
-{
-}
-
-SignedHit::SignedHit(int detectorID) : sign(0)
-{
-    hit.index = -1;
-    hit.detectorID = detectorID;
-}
-
-SignedHit::SignedHit(Hit hit_input, int sign_input) : hit(hit_input), sign(sign_input)
-{
-}
-
-void SignedHit::identify(std::ostream& os) const 
-{
-    if(sign > 0) os << "L - ";
-    if(sign < 0) os << "R - ";
-    if(sign == 0) os << "U - ";
-
-    os << hit.index << " " << hit.detectorID << "  " << hit.elementID << std::endl;
-}
-
 //Proptube segment definition
-//const GeomSvc* PropSegment::p_geomSvc = GeomSvc::instance();
-
 PropSegment::PropSegment() : a(-999.), b(-999.), err_a(100.), err_b(100.), chisq(1.E6), nHodoHits(0)
 {
     for(int i = 0; i < 4; ++i) hits[i].hit.index = -1;
