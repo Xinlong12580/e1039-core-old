@@ -23,41 +23,12 @@ Created: 06-09-2013
 #include "SRawEvent.h"
 #include "SRecEvent.h"
 
-class SignedHit : public PHObject
-{
-public:
-    SignedHit();
-    explicit SignedHit(int detectorID);
-    SignedHit(Hit hit_input, int sign_input);
-
-    //PHObject virtual overloads
-    void identify(std::ostream& os = std::cout) const;
-    void Reset() { hit = Hit(); sign = 0; }
-    int  isValid() const { return hit.index > 0; }
-    SignedHit* Clone() const { return (new SignedHit(hit, sign)); }
-
-    //comparision operators for sorting
-    bool operator<(const SignedHit elem) const { return hit.detectorID < elem.hit.detectorID; }
-    bool operator==(const SignedHit elem) const { return hit.index == elem.hit.index; }
-
-    //Get the real hit position
-    double pos() { return hit.pos + sign*hit.driftDistance; }
-    double pos(int sign_input) { return hit.pos + sign_input*hit.driftDistance; }
-
-    //Data members
-    Hit hit;
-    int sign;
-
-    ClassDef(SignedHit, 1)
-};
-
 class PropSegment : public PHObject
 {
 public:
     PropSegment();
 
     //PHObject virtual overloads
-    void identify(std::ostream& os = std::cout) const { print(os); };
     void Reset() { init(); }
     int  isValid() const;
     PropSegment* Clone() const { return (new PropSegment(*this)); }
@@ -71,7 +42,6 @@ public:
     //Debugging output
     void print(std::ostream& os = std::cout) const;
 
-#ifndef __CINT__
     //Get expected position at a given Z
     double getExpPosition(double z) const { return a*z + b; }
 
@@ -99,7 +69,6 @@ public:
     //resolve left/right
     void resolveLR();
     void resolveLR(int setting);
-#endif
 
     //track slope the interception
     double a;
@@ -131,13 +100,9 @@ public:
     int  isValid() const;
     Tracklet* Clone() const { return (new Tracklet(*this)); }
 
-    //Basic quality cut
-    //bool isValid();
-
     //Debuggin output
     void print(std::ostream& os = std::cout);
 
-#ifndef __CINT__
     //Sort hit list
     void sortHits() { hits.sort(); }
 
@@ -208,7 +173,6 @@ public:
 
     //Convert to a SRecTrack
     SRecTrack getSRecTrack(bool hyptest = true);
-#endif
 
     //Station ID, ranging from 1 to nStation, nStation-1 means back partial track, nStation means global track
     int stationID;
@@ -283,4 +247,3 @@ private:
 };
 
 
-#endif
