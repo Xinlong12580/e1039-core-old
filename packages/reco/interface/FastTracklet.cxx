@@ -100,49 +100,6 @@ namespace
 }
 
 //Proptube segment definition
-PropSegment::PropSegment() : a(-999.), b(-999.), err_a(100.), err_b(100.), chisq(1.E6), nHodoHits(0)
-{
-    for(int i = 0; i < 4; ++i) hits[i].hit.index = -1;
-    for(int i = 0; i < 4; ++i) hodoHits[i].index = -1;
-    initGlobalVariables();
-}
-
-void PropSegment::init()
-{
-    a = -999.;
-    b = -999.;
-    err_a = 100;
-    err_b = 100;
-
-    for(int i = 0; i < 4; ++i) hits[i].hit.index = -1;
-
-    chisq = 1E6;
-}
-
-void PropSegment::print(std::ostream& os) const
-{
-    using namespace std;
-
-    os << "nHits: " << getNHits() << ", nPlanes: " << getNPlanes() << endl;
-    os << "a = " << a << ", b = " << b << ", chisq = " << chisq << endl;
-    os << "TX_MAX = " << TX_MAX << ", X0_MAX = " << X0_MAX << ", chisq max = " << 5 << endl;
-    //os << "Absorber projection: " << getExpPosition(MUID_Z_REF) << endl;
-
-    for(int i = 0; i < 4; ++i)
-    {
-        if(hits[i].sign > 0) os << "L: ";
-        if(hits[i].sign < 0) os << "R: ";
-        if(hits[i].sign == 0) os << "U: ";
-
-        os << hits[i].hit.index << "  " << hits[i].hit.detectorID << "  " << hits[i].hit.elementID << " === ";
-    }
-    os << endl;
-}
-
-double PropSegment::getClosestApproach(double z, double pos)
-{
-    return (a*z + b - pos)/sqrt(a*a + 1.);
-}
 
 double PropSegment::getPosRef(double default_val)
 {
