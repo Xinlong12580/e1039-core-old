@@ -83,7 +83,6 @@ public:
 
   void set_legacy_rec_container(const bool b = true) { _legacy_rec_container = b; } 
 
-protected:
 
   virtual int InitField(PHCompositeNode* topNode);
   virtual int InitGeom(PHCompositeNode* topNode);

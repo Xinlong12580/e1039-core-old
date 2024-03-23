@@ -250,7 +250,6 @@ public:
         NIM5 = triggerBit(9)
     };
 
-private:
     //RunID, spillID, eventID
     Int_t fRunID;
     Int_t fEventID;

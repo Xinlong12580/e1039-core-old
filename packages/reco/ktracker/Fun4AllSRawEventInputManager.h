@@ -52,7 +52,7 @@ public:
 		_tree_name = treeName;
 	}
 
-protected:
+
   int OpenNextFile();
   void E906ToE1039();
 

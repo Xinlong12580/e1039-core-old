@@ -28,7 +28,6 @@ public:
 
   void displayEvent();
 
-private:
   TString _fitterTy;
   genfit::AbsKalmanFitter* _kmfitter;
   unsigned int _verbosity;

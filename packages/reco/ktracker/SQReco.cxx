@@ -350,6 +350,7 @@ int SQReco::process_event(PHCompositeNode* topNode)
   ProcessEventPrep();
 
   int finderstatus = _fastfinder->setRawEvent(_rawEvent);
+  std::cout<<"great"<<std::endl;
   if(_legacy_rec_container) 
   {
     _recEvent->setRawEvent(_rawEvent);

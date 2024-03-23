@@ -132,7 +132,7 @@ public:
     this->evalFileName = evalFileName;
   }
 
-private:
+
 
     int InitField(PHCompositeNode *topNode);
 

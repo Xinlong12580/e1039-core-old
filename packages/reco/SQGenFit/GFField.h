@@ -20,7 +20,7 @@ public:
   void setScale(double scale) { _scale = scale; }
   void disable() { _disable = true; }
 
-private:
+
   const PHField* _field;
   double _scale;
   bool   _disable;
