@@ -107,7 +107,6 @@ class Fun4AllServer : public Fun4AllBase
   void ReadSpillTimer(double& time_subsys, double& time_output);
   void ResetSpillTimer();
 
- protected:
   Fun4AllServer(const std::string &name = "Fun4AllServer");
   int InitNodeTree(PHCompositeNode *topNode);
   int CountOutNodes(PHCompositeNode *startNode);

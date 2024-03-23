@@ -1,0 +1,76 @@
+12:58 03/09: Don't understand why when building the U slim tracklets in Station3,
+we are really building the V slim tracklets (and vice versa); changed the
+conditional statement in "buildTrackletsInStation", "buildTrackletsInStationU"
+and "buildTrackletsInStationV", where the tracklet parameter is set, to make 
+more succinct; editted the spacing and comments in lines
+
+15:48 03/09: Why D1 is not used?; changed some iterators to range-based for,
+which is more succint; deleted the two "continue;" statement in "buildBackPartialTracksSlimX",
+which doesn't function here; other minor changes
+
+18:17 03/09: The U-V inversion problem at station 3 seems more severe now
+since the USlim in station2 and station3 at used togetor to build back tracklet;
+Did the same update for "buildBackPartialTracksSlimU" and "buildBackPartialTracksSlimV";
+Deleted some unused variables; Absobled "OLD_TRACKING" in "buildBackPartialTracksSlimX(U,V)"
+to a more compact conditional expression
+
+14:14 03/10: Changed the names of a set of data members Tracklet::st2X, Tracklet::st2Xsl,
+etc. to make it more self-explanatory; other minor changes
+
+17:25 03/10: Merged Tracklet::nXHits, Tracklet::nUHits and Tracklet::nVHits
+to Tracklet::nHits[3]; Merged KalmanFastTracking_Displaced::buildTrackletsInStationSlim,
+KalmanFastTracking_Displaced::buildTrackletsInStationSlimU and KalmanFastTracking_Displaced::buildTrackletsInStationSlimV
+to KalmanFastTracking_Displaced::buildTrackletsInStationSlim; other minor
+changes
+
+18:25 03/10 Merged KalmanFastTracking::TrackletsInStSlimX[5], KalmanFastTracking::TrackletsInStSlimU[5]
+and KalmanFastTracking::TrackletsInStSlimV[5] to KalmanFastTracking::TrackletsInStSlim[5][3];
+other minor changes
+
+9:53 03/12 Fixed some bugs so it can reproduce the same results on e906 data
+
+17:59 03/12 Merged some data members containing X, U, V information to a
+3 array; Merged KalmanFastTracking::compareTrackletsSlim, KalmanFastTracking::compareTrackletsSlimU
+and KalmanFastTracking::compareTrackletsSlimV to KalmanFastTracking::compareTrackletsSlim;
+Merged KalmanFastTracking::compareTrackletsSlim_3hits, KalmanFastTracking::compareTrackletsSlimU_3hits
+and KalmanFastTracking::compareTrackletsSlimV_3hits to KalmanFastTracking::compareTrackletsSlim_3hits;
+other minor changes
+
+13:03 03/13 Merged KalmanFastTracking_Displaced::buildBackPartialTracksSlimX,
+KalmanFastTracking_Displaced::buildBackPartialTracksSlimU and KalmanFastTracking_Displaced::buildBackPartialTracksSlimV
+to KalmanFastTracking_Displaced::buildBackPartialTracksSlim; created two new
+functions KalmanFastTracking_Displaced::buildXUCombos and KalmanFastTracking_Displaced::buildXUVCombos
+to supplement the merged function; other minor changes
+
+14:02 03/13 Fixed a bug so it can reproduce the same results on e906 data; other minor changes
+
+16:09 03/13 Merged Tracklet::getSlopesX, Tracklet::getSlopesU and Tracklet::getSlopesV
+to Tracklet::getSlopesX; other minor changes
+
+18:50 03/14 Changes on data flows; other minor changes
+
+17:40 03/19 Minor changes in KalmanFastTracking_Displaced::buildGlobalTracksDisplaced;
+other minor changes
+
+16:42 03/20 Added a new function KalmanFastTracking_Displaced::checkQuality
+to do tracklet quality control; other minor changes
+
+20:16 03/20 Adjusted the order of hits in FastTracklet::getSlope; Added KalmanFastTracking::assignSign
+to resolve the sign of hits from the corresponding line index; other minor
+changes 
+
+13:42 03/21 Changed the loop structure in KalmanFastTracking_Displaced::buildTrackletsInStation1_NEW;
+other minor changes
+
+15:13 03/21 Deleted unuseful information in KalmanFastTracking_Displaced::buildBackPartialTracksSlim_v3;
+other monir changes
+
+16:04 03/21 Deleted KalmanFastTracking_Displaced::getNum1Combos; Deleted unused
+information in KalmanFastTracking_Displaced::buildBackPartialTracksSlim_v3;
+other minor changes
+
+16:51 03/22 Modified KalmanFastTracking_Displaced::buildGlobalTracksDisplaced
+to make it clearer; other minor changes
+
+20:02 03/22 Fixed a bug so it can reproduce the same results for non-displaced
+tracking

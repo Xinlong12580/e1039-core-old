@@ -253,7 +253,7 @@ public:
     }
   }*/
   
-private:
+
   
   //std::vector<double> trackletVtxHypos;
 
@@ -494,7 +494,6 @@ public:
     void clearTracks();
     void clearDimuons();
 
-private:
     ///Reconstruction status
     Short_t fRecStatus;
 

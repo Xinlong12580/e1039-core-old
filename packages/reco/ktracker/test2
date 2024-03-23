@@ -1,0 +1,36 @@
+
+
+void KalmanFastTracking_Displaced::checkIntercepts(Tracklet tracklet1, Tracklet tracklet2, double& xint, double& yint)
+{
+  
+  double tx_st1_1, x0_st1_1, ty_st1_1, y0_st1_1;
+  tracklet1.getXZInfoInSt1(tx_st1_1, x0_st1_1);
+  ty_st1_1 = tracklet1.ty;
+  y0_st1_1 = tracklet1.y0;
+  double tx_st1_2, x0_st1_2, ty_st1_2, y0_st1_2;
+  tracklet2.getXZInfoInSt1(tx_st1_2, x0_st1_2);
+  ty_st1_2 = tracklet2.ty;
+  y0_st1_2 = tracklet2.y0;
+
+  xint = (x0_st1_1 - x0_st1_2)/(tx_st1_2 - tx_st1_1);
+  yint = (y0_st1_1 - y0_st1_2)/(ty_st1_2 - ty_st1_1);
+
+  return;
+}
+
+void KalmanFastTracking_Displaced::checkQuality(Tracklet & tracklet){
+  tracklet.addDummyHits();
+  double testChisq = tracklet.chisq;
+  bool gettingBetter = true;
+  int passes = 0;
+  while(testChisq > 20. &&  gettingBetter && passes<5){
+	checkSigns(tracklet); //see if flipping the "side" of a wire that hits are on can improve the quality
+	if(tracklet.chisq < testChisq){
+	  testChisq = tracklet.chisq;
+	} else{
+	  gettingBetter = false;
+	}
+	passes++;
+  }
+}
+

@@ -57,7 +57,7 @@ public:
   genfit::Track* getGenFitTrack() { return _track; }
   genfit::AbsTrackRep* getGenFitTrkRep() { return _trkrep; }
 
-private:
+
   //Auxilary function to initialize the extrapolation/projection, should not be seen by external user
   bool setInitialStateForExtrap(const int startPtID = 0);
 

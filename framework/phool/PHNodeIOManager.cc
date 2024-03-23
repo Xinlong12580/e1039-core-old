@@ -215,7 +215,8 @@ PHNodeIOManager::write(TObject** data, const string& path)
 	      bufSize = phob->BufferSize();
 	    }
           tree->Branch(path.c_str(), (*data)->ClassName(),
-                                    data, bufSize, split);
+                                    data, bufSize, 0);
+	  std::cout<<"Write: "<< path.c_str()<<std::endl;
         }
       else
         {
