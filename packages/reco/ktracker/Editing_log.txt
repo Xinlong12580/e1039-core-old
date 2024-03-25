@@ -74,3 +74,19 @@ to make it clearer; other minor changes
 
 20:02 03/22 Fixed a bug so it can reproduce the same results for non-displaced
 tracking
+
+18:24 03/23 Removed redundant plane type indices in FastTracklet; other minor
+changes
+
+16:05 03/24 Deleted FastTracklet::XUVCombos; modified combos comparism in KalmanFastTracking_Displaced;
+other minor changes
+
+17:58 03/24 Add KalmanFastTracking_Displaced::buildBackPartialTracksSlim();
+modified structure of KalmanFastTracking_Displaced::setRawEvent; other minor
+changes
+
+18:48 03/24 Deleted commented code chunks; Changed structure of KalmanFastTracking_Displaced::compareTrackletsSlim_3hits;
+other minor changes
+
+12:08 03/25 Formatted code; Added comments
+

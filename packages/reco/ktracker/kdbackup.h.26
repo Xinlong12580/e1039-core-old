@@ -7,6 +7,9 @@ Author: Kun Liu, liuk@fnal.gov
 Created: 05-24-2013
 */
 
+/*Clean up log:
+ * 14:28 03/08: cleaned the unused index in TrackletInStSlim; deleted some comments
+ */
 #ifndef _KALMANFASTTRACKING_Displaced_H
 #define _KALMANFASTTRACKING_Displaced_H
 
@@ -58,11 +61,11 @@ public:
     void buildTrackletsInStation(int stationID, int listID, double *pos_exp = nullptr, double *window = nullptr);
     void buildTrackletsInStationSlim(int stationID, int listID, int plane_type, double *pos_exp = nullptr, double *window = nullptr);
 
-    bool buildTrackletsInStation1(int stationID, int listID, double expXZSlope, double expYSlope, double y0, bool tight, double *pos_exp = nullptr, double *window = nullptr);
+    bool buildTrackletsInStation1_NEW(int stationID, int listID, double expXZSlope, double expYSlope, double y0, bool tight, double *pos_exp = nullptr, double *window = nullptr);
 
     // Build back partial tracks using tracklets in station 2 & 3
     void buildBackPartialTracks();
-    void buildFullBackPartialTracksSlim();
+    void buildBackPartialTracksSlim_v3();
     int buildBackPartialTracksSlim();
     void buildBackPartialTracksSlim(int plane_type, int pass, double slopeComparison, double windowSize);
 

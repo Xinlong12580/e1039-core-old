@@ -538,7 +538,7 @@ int KalmanFastTracking_Displaced::setRawEvent(SRawEvent *event_input)
     // Get hit combinations in station 2
     _timers["st2"]->restart();
     for (int plane_type = 0; plane_type < 3; plane_type++)
-        buildTrackletsInStationSlim(3, 1, plane_type); 
+        buildTrackletsInStationSlim(3, 1, plane_type); // 3 for station-2, 1 for list position 1, plane type (X=0, U=1, V=2)
     if (verbosity >= 2)
     {
         std::cout << "Station 2 combos- x : u : v";
@@ -573,7 +573,7 @@ int KalmanFastTracking_Displaced::setRawEvent(SRawEvent *event_input)
 
     // Now make the actual station 2+3 tracklets by combining tracklets of different plane types
     _timers["st23"]->restart();
-    buildFullBackPartialTracksSlim(); // This should be relatively fast given the binned combination method
+    buildBackPartialTracksSlim_v3(); // This should be relatively fast given the binned combination method
     if (verbosity >= 2)
         LogInfo("NTracklets St2+St3: " << trackletsInSt[3].size());
     if (outputListIdx > 3 && trackletsInSt[3].empty())
@@ -586,9 +586,13 @@ int KalmanFastTracking_Displaced::setRawEvent(SRawEvent *event_input)
     // Connect tracklets in station 2+3 and station 1 to form global tracks
     _timers["global"]->restart();
     if (!TRACK_DISPLACED)
+    {
         buildGlobalTracks();
+    }
     else
+    {
         buildGlobalTracksDisplaced();
+    }
     _timers["global"]->stop();
     totalTime += _timers["global"]->get_accumulated_time() / 1000.;
     if (outputListIdx == 4 && trackletsInSt[4].empty())
@@ -719,26 +723,34 @@ bool KalmanFastTracking_Displaced::acceptEvent(SRawEvent *rawEvent)
     return true;
 }
 
-// This function finds valid hits combinations for a super detector in a station
+// This function finds valid X hits combinations
 void KalmanFastTracking_Displaced::buildTrackletsInStationSlim(int stationID, int listID, int plane_type, double *pos_exp, double *window)
 { /// All this function do is to contruct tracklets only contain a hit pair in a certain superdetector with a set possible track lines based on the 4 possible sign combination
     // actuall ID of the tracklet lists
     int sID = stationID - 1;
-    
     // Extract the X, U, V hit pairs
     std::list<SRawEvent::hit_pair> pairs;
-    //Notice there is a tricky aspect of the detector: the direction of U(V) plane in station 4 and station 5 are different 
     int extract_number = plane_type;
     if (stationID == 4 || stationID == 5)
-        extract_number = (3 - plane_type) % 3; 
+        extract_number = (3 - plane_type) % 3; /// This line is to change 1 to 2 and vice versa, Which is the WEIRDEST part I've seen in this code. Will ask Patrick latter why we do this
 
     if (pos_exp == nullptr)
+    {
         pairs = rawEvent->getPartialHitPairsInSuperDetector(superIDs[sID][extract_number]);
+    }
     else
+    {
+        // Note that in pos_exp[], index 0 stands for X, index 1 stands for U, index 2 stands for V
         pairs = rawEvent->getPartialHitPairsInSuperDetector(superIDs[sID][extract_number], pos_exp[extract_number], window[extract_number]);
+    }
 
     if (pairs.empty())
+    {
+#ifdef _DEBUG_ON
+        LogInfo("Not all view has hits in station " << stationID);
+#endif
         return;
+    }
 
     for (auto pair : pairs)
     {
@@ -784,17 +796,15 @@ void KalmanFastTracking_Displaced::buildTrackletsInStationSlim(int stationID, in
         }
         if (pair.first >= 0 && pair.second >= 0)
         {
-            tracklet_new.getSlopes(hitAll[pair.second], hitAll[pair.first], plane_type); 
+            tracklet_new.getSlopes(hitAll[pair.second], hitAll[pair.first], plane_type); /// Take care of the order: in hit_pair the even index comes first
             tracklet_new.sortHits();
         }
         trackletsInStSlim[listID][plane_type].push_back(tracklet_new);
     }
 }
-
-//This function builds back partial tracklets for all three plane types
 int KalmanFastTracking_Displaced::buildBackPartialTracksSlim()
 {
-	///XL: For low pile up situation, We can simply use the commented code. I will investigate the needed cuts for real data in the future
+
     /*
     for (int i=0;i<3;i++)buildBackPartialTracksSlim(i, reqHits, slopeComp, windowSize);
     if(verbosity >= 2) {
@@ -831,7 +841,7 @@ int KalmanFastTracking_Displaced::buildBackPartialTracksSlim()
 
     if (numHodoValidUXCombos > 10000 && !highPU)
     {
-        cutAdjuster(numHodoValidUXCombos, 1); 
+        cutAdjuster(numHodoValidUXCombos, 1); // tighten matching requirements if there are too many potential combinations (normally the result of high pileup)
         adjusted = true;
         for (int i = 0; i < 2; i++)
         {
@@ -894,7 +904,6 @@ int KalmanFastTracking_Displaced::buildBackPartialTracksSlim()
     return 0;
 }
 
-//This function builds back partial tracklets for a perticular plane type
 void KalmanFastTracking_Displaced::buildBackPartialTracksSlim(int plane_type, int pass, double slopeComparison, double windowSize)
 {
     for (std::list<Tracklet>::iterator tracklet3 = trackletsInStSlim[2][plane_type].begin(); tracklet3 != trackletsInStSlim[2][plane_type].end(); ++tracklet3)
@@ -993,7 +1002,7 @@ void KalmanFastTracking_Displaced::buildBackPartialTracksSlim(int plane_type, in
                     for (int hd3 = 0; hd3 < hodo3Diffs.size(); hd3++)
                     { /// Why do this strance minus operation? In my opinion there shoule be abs()+abs()
                         if (std::abs(hodo2Diffs.at(hd2).second - hodo3Diffs.at(hd3).second) < hodoDIFFWin)
-                        { 
+                        { // WPM was 15
                             tracklet_23.allowedHodos.push_back(std::make_pair(hodo2Diffs.at(hd2).first, hodo3Diffs.at(hd3).first));
                         }
                     }
@@ -1008,7 +1017,6 @@ void KalmanFastTracking_Displaced::buildBackPartialTracksSlim(int plane_type, in
     }
 }
 
-//This function finds the matching U tracklets to a X tracklet
 void KalmanFastTracking_Displaced::buildXUCombos()
 {
     for (unsigned int tu23 = 0; tu23 < trackletsInSt23Slim[1].size(); tu23++)
@@ -1050,14 +1058,12 @@ void KalmanFastTracking_Displaced::buildXUCombos()
     }
 }
 
-///XL: If we don't need to do cut examination after building U tracklets, these two functions can be merged
-//This function finds the matching U and V tracklets to a X tracklet
 void KalmanFastTracking_Displaced::buildXUVCombos()
 {
     for (unsigned int tv23 = 0; tv23 < trackletsInSt23Slim[2].size(); tv23++)
     {
         for (unsigned int tx23 = 0; tx23 < trackletsInSt23Slim[0].size(); tx23++)
-        {
+        { /// XinL: This loop is strange. Need to check it
             Tracklet &trackletx_23 = trackletsInSt23Slim[0].at(tx23);
             Tracklet &trackletv_23 = trackletsInSt23Slim[2].at(tv23);
             if (!(trackletx_23.isM == trackletv_23.isM))
@@ -1085,16 +1091,16 @@ void KalmanFastTracking_Displaced::buildXUVCombos()
                             }
                         }
                     }
-                    if (match) break;
+                    if (match)
+                        break;
                 }
             }
         }
     }
 }
 
-//This function finds the valid combination of tracklets in st2 and st3, and solve the left-right ambigurity
 bool KalmanFastTracking_Displaced::compareTrackletsSlim(Tracklet *tracklet2, Tracklet *tracklet3, int plane_type, int pass, double slope_threshold, double windowSize)
-{
+{ /// find the best drift sign combinations of st2 and st3 slim tracklets
     if (!(tracklet2->hits.size() == 2 && tracklet3->hits.size() == 2))
         return false;
 
@@ -1158,7 +1164,7 @@ bool KalmanFastTracking_Displaced::compareTrackletsSlim(Tracklet *tracklet2, Tra
     return true;
 }
 
-//This functions is a 3 hits version of the previous function
+//*/
 bool KalmanFastTracking_Displaced::compareTrackletsSlim_3hits(Tracklet *tracklet2, Tracklet *tracklet3, int plane_type, int pass, double slopeComparison, double windowSize)
 {
 
@@ -1209,8 +1215,7 @@ bool KalmanFastTracking_Displaced::compareTrackletsSlim_3hits(Tracklet *tracklet
     }
 }
 
-//This function builds full tracklets in st2 and st3
-void KalmanFastTracking_Displaced::buildFullBackPartialTracksSlim()
+void KalmanFastTracking_Displaced::buildBackPartialTracksSlim_v3()
 {
     for (unsigned int tx = 0; tx < trackletsInSt23Slim[0].size(); tx++)
     {
@@ -1224,14 +1229,14 @@ void KalmanFastTracking_Displaced::buildFullBackPartialTracksSlim()
             Tracklet trackletV = trackletsInSt23Slim[2].at(combo_pair.second);
 
             // quick checks on hit combination compatibility in the three wire slants
-            ///XL: I believe there should be a factor cos(14/360*2*pi) for trackletX. I will check it in the future
+            /// I believe there should be a factor cos(14/360*2*pi) for trackletX
             if (std::abs((trackletX.slope_st2 - trackletU.slope_st2) - -1. * (trackletX.slope_st2 - trackletV.slope_st2)) > XUVSlopeWin)
                 continue;
             if (std::abs((trackletX.pos_st2 - trackletU.pos_st2) - -1. * (trackletX.pos_st2 - trackletV.pos_st2)) > XUVPosWin)
                 continue;
             if (std::abs((trackletX.pos_st3 - trackletU.pos_st3) - -1. * (trackletX.pos_st3 - trackletV.pos_st3)) > XUVPosWin)
                 continue;
-                
+            //*/
             double u_angle_st2 = (std::asin(p_geomSvc->getSintheta(17)) + std::asin(p_geomSvc->getSintheta(18))) / 2;
             double v_angle_st2 = (std::asin(p_geomSvc->getSintheta(13)) + std::asin(p_geomSvc->getSintheta(14))) / 2;
             double u_angle_st3;
@@ -1251,7 +1256,11 @@ void KalmanFastTracking_Displaced::buildFullBackPartialTracksSlim()
             double testTY2 = (-std::cos(v_angle_st2) * trackletU.slope_st2 + std::cos(u_angle_st2) * trackletV.slope_st2) / std::sin(v_angle_st2 - u_angle_st2);
             double testTY3 = (-std::cos(v_angle_st3) * trackletU.slope_st3 + std::cos(u_angle_st3) * trackletV.slope_st3) / std::sin(v_angle_st3 - u_angle_st3);
 
-            if (std::abs(testTY2 - testTY3) > YSlopesDiff) continue;
+            if (std::abs(testTY2 - testTY3) > YSlopesDiff)
+            {
+                std::cout << "???????????????????";
+                continue;
+            } // The y-slope extracted from the U wires should match the y-slope extracted from the V wires
 
             if (std::abs(trackletX.slope_st2 - testTX2) > XSlopesDiff || std::abs(trackletX.slope_st2 - testTX3) > XSlopesDiff)
                 continue; // The x-slopes extracted from the U and V wires should match the slope found from the X wires
@@ -1310,17 +1319,16 @@ void KalmanFastTracking_Displaced::buildFullBackPartialTracksSlim()
             {
                 tracklet_best = tracklet_23;
             }
-        } 
+        } // end loop over VUX combos
 
         if (acceptTracklet(tracklet_best) && tracklet_best.chisq < st23ChiSqCut)
             trackletsInSt[3].push_back(tracklet_best);
-    }
+    } // end X loop
     for (auto &tracklet : trackletsInSt[3])
-        checkQuality(tracklet);           /// XL: If add dummy hits here the result will be considerablly different from the original code. I will check it in the future
-    reduceTrackletList(trackletsInSt[3]); 
+        checkQuality(tracklet);           /// XinL: If add dummy hits here things will be very different! Don't know why but follow Patrick's original code
+    reduceTrackletList(trackletsInSt[3]); // remove redundant station 2+3 tracklets
 }
 
-//Not displaced version of building global tracklets
 void KalmanFastTracking_Displaced::buildGlobalTracks()
 {
     double pos_exp[3], window[3];
@@ -1487,22 +1495,22 @@ void KalmanFastTracking_Displaced::buildGlobalTracks()
     }
 }
 
-//Displaced version of building global trackelets
 void KalmanFastTracking_Displaced::buildGlobalTracksDisplaced()
 {
     for (std::list<Tracklet>::iterator tracklet23 = trackletsInSt[3].begin(); tracklet23 != trackletsInSt[3].end(); ++tracklet23)
     {
-        std::vector<Tracklet> possibleGlobalTracks; 
+        std::vector<Tracklet> possibleGlobalTracks; /// XinL: This is for some st1 resolution that I don't really understand
         Tracklet tracklet_best[2];
-        for (int i = 0; i < 1; ++i) // for two station-1 chambers //WPM edited so that it only does one chamber.  I think that's all we're using in our simulation...///XL: added back since there are DC1 for E906
+        for (int i = 0; i < 1; ++i) // for two station-1 chambers //WPM edited so that it only does one chamber.  I think that's all we're using in our simulation...///XinL added back since there are DC1 for E906
         {
             bool validTrackFound = false;
             double valid_track_p = -1;
             Tracklet tracklet_best_prob, tracklet_best_vtx;
+            /// XinL: I deleted the validTrackPX here since it seems not very useful. However, I think there could be the situation that there are two matching invP (maybe far from each other if high PU), and we need to decide which one is the better
             double inv_ps[23];
-            inv_ps[0] = 0.0049; /// XL: I find the results overly sensitive to the parameter here. I will check it in the future. These kind of wierd numbers are derived from Patrick's original code
+            inv_ps[0] = 0.0049; /// XinL: I find very little change here will result in significantly different outcome, which should not happen. Will investigate more
             for (int j = 1; j < 23; j++)
-                inv_ps[j] = inv_ps[j - 1] + 0.0097; 
+                inv_ps[j] = inv_ps[j - 1] + 0.0097; // inv_p from 0.005 to 0.225. This is approximately copied from Patrck's original code
             for (double inv_p : inv_ps)
             {
 
@@ -1511,6 +1519,7 @@ void KalmanFastTracking_Displaced::buildGlobalTracksDisplaced()
                 {
 
                     double expXZSlope = (*tracklet23).tx + charge * PT_KICK_KMAG * inv_p;
+
                     bool hodoFound = false;
                     for (auto hit_index : hitIDs_maskX[0])
                     {
@@ -1533,7 +1542,6 @@ void KalmanFastTracking_Displaced::buildGlobalTracksDisplaced()
                     _timers["global_st1"]->restart();
                     double pos_exp[3], window[3];
                     pos_exp[0] = tracklet23->tx * (z_plane[i * 6 + 3] - tracklet23->z_st2) + tracklet23->pos_st2 - 500 * charge * PT_KICK_KMAG * inv_p;
-                    ///XL: I believe the commented one is more reasonable, but it will produce some tiny discrepancies to the original code. To be truthful I don't use it here, but I may use it in the future 
                     // pos_exp[0] = tracklet23->tx * z_plane[i*6+3] + tracklet23->x0-500*charge*PT_KICK_KMAG*inv_p;///XinL: I believe the commented one should be more better but it will modify the original results slightly
 
                     // get expected U and V positions in station 1
@@ -1549,7 +1557,7 @@ void KalmanFastTracking_Displaced::buildGlobalTracksDisplaced()
                     if (trackletsInStSlim[0][0].size() * trackletsInStSlim[0][1].size() * trackletsInStSlim[0][2].size() > 3000)
                         doTight = true; // Some station 1 pileup mitigation!
 
-                    if (!(buildTrackletsInStation1(i + 1, 0, expXZSlope, (*tracklet23).ty, (*tracklet23).y0, doTight, pos_exp, window)))
+                    if (!(buildTrackletsInStation1_NEW(i + 1, 0, expXZSlope, (*tracklet23).ty, (*tracklet23).y0, doTight, pos_exp, window)))
                         continue; // Find station 1 hit combinations in the relevant window
 
                     _timers["global_st1"]->stop();
@@ -1601,7 +1609,7 @@ void KalmanFastTracking_Displaced::buildGlobalTracksDisplaced()
                     if (valid_track_p < 0)
                         valid_track_p = inv_p;
                 }
-                if (validTrackFound && (inv_p - valid_track_p) > 4 * (inv_ps[1] - inv_ps[0]) + 0.000001)///XL: I believe there could be more valid momentum when high pile up. 
+                if (validTrackFound && (inv_p - valid_track_p) > 4 * (inv_ps[1] - inv_ps[0]) + 0.000001)
                     break;
             }
         }
@@ -1893,6 +1901,35 @@ bool KalmanFastTracking_Displaced::removeBadHits(Tracklet &tracklet)
     return true;
 }
 
+void KalmanFastTracking_Displaced::checkSigns(Tracklet &tracklet)
+{
+    double compChiSq = tracklet.chisq;
+    for (std::list<SignedHit>::iterator fliped_hit = tracklet.hits.begin(); fliped_hit != tracklet.hits.end(); ++fliped_hit)
+    {
+        if (fliped_hit->hit.index < 0)
+            continue;
+
+        int detectorID = fliped_hit->hit.detectorID;
+        int index = detectorID - 1;
+        tracklet.residual[index] = fliped_hit->sign * fabs(fliped_hit->hit.driftDistance) - p_geomSvc->getDCA(detectorID, fliped_hit->hit.elementID, tracklet.tx, tracklet.ty, tracklet.x0, tracklet.y0);
+
+        if (std::abs(-1 * fliped_hit->sign * fabs(fliped_hit->hit.driftDistance) - p_geomSvc->getDCA(detectorID, fliped_hit->hit.elementID, tracklet.tx, tracklet.ty, tracklet.x0, tracklet.y0)) < std::abs(2. * tracklet.residual[index]))
+        {
+            fliped_hit->sign = -fliped_hit->sign;
+            fitTracklet(tracklet);
+            if (tracklet.calcChisq() < compChiSq)
+            {
+                compChiSq = tracklet.chisq;
+            }
+            else
+            {
+                fliped_hit->sign = -fliped_hit->sign;
+                fitTracklet(tracklet);
+            }
+        }
+    }
+}
+
 void KalmanFastTracking_Displaced::resolveLeftRight(SRawEvent::hit_pair hpair, int &LR1, int &LR2)
 {
     LR1 = 0;
@@ -2111,8 +2148,8 @@ void KalmanFastTracking_Displaced::buildTrackletsInStation(int stationID, int li
     }
 }
 
-//*//This function builds tracklets in st1
-bool KalmanFastTracking_Displaced::buildTrackletsInStation1(int stationID, int listID, double expXZSlope, double expYSlope, double y0, bool tight, double *pos_exp, double *window)
+//*
+bool KalmanFastTracking_Displaced::buildTrackletsInStation1_NEW(int stationID, int listID, double expXZSlope, double expYSlope, double y0, bool tight, double *pos_exp, double *window)
 {
 #ifdef _DEBUG_ON
     LogInfo("Building tracklets in station " << stationID);
@@ -2154,7 +2191,8 @@ bool KalmanFastTracking_Displaced::buildTrackletsInStation1(int stationID, int l
                 }
                 else
                 {
-                    for (auto &hit : tracklet.hits) assignSign(hit, bestTracklet);
+                    for (auto &hit : tracklet.hits)
+                        assignSign(hit, bestTracklet);
                     valid_tracklets[plane_type].push_back(tracklet);
                 }
             }
@@ -2183,15 +2221,13 @@ bool KalmanFastTracking_Displaced::buildTrackletsInStation1(int stationID, int l
                 fitTracklet(tracklet_new_Station1);
 
                 // hit sign assignment for station 1
-                ///XL: This part is a bit different from the similar chunk in building back tracklets. I on't know if it is bug and I will check it in the future
                 for (auto &hit : tracklet_new_Station1.hits)
                 {
                     if (hit.sign == 0)
                     {
                         hit.sign = 1;
-                        double dcaPlus = tracklet_new_Station1.calcChisq(); 
+                        double dcaPlus = tracklet_new_Station1.calcChisq(); /// I believe there or in the build back tracklets function must be a bug
                         hit.sign = -1;
-                     
                         double dcaMinus = tracklet_new_Station1.calcChisq();
                         if (std::abs(dcaPlus) < std::abs(dcaMinus))
                         {
@@ -2226,8 +2262,9 @@ bool KalmanFastTracking_Displaced::acceptTracklet(Tracklet &tracklet)
     return tracklet.isValid();
 }
 
-/// XL: This function is problematic when used in buildGlobalTracks. Firstly, the stationID=3
-/// statement means it will do nothing at all. Secondly, possibleLines is not assgined to global tracks. 
+/// XinL: This function is problematic to be used in buildGlobalTracks for many reasons. Firstly, the stationID=3
+/// condition means it will do nothing at all. Secondly, possibleLines is not assgined to global tracks. Don't understand
+/// why Patrick's doing this but will edit it later anyway
 bool KalmanFastTracking_Displaced::hodoMask(Tracklet &tracklet)
 {
     // LogInfo(tracklet.stationID);
@@ -2325,7 +2362,6 @@ bool KalmanFastTracking_Displaced::hodoMask(Tracklet &tracklet)
     return true;
 }
 
-//prop tube infomation is not used in this algorithm
 bool KalmanFastTracking_Displaced::muonID_search(Tracklet &tracklet)
 {
     // Set the cut value on multiple scattering
@@ -2401,7 +2437,6 @@ bool KalmanFastTracking_Displaced::muonID_search(Tracklet &tracklet)
     return false;
 }
 
-//prop tube infomation is not used in this algorithm
 bool KalmanFastTracking_Displaced::muonID_comp(Tracklet &tracklet)
 {
     // Set the cut value on multiple scattering
@@ -2463,7 +2498,6 @@ bool KalmanFastTracking_Displaced::muonID_comp(Tracklet &tracklet)
     return true;
 }
 
-//prop tube infomation is not used in this algorithm
 bool KalmanFastTracking_Displaced::muonID_hodoAid(Tracklet &tracklet)
 {
     double win = 0.03;
@@ -2514,7 +2548,6 @@ bool KalmanFastTracking_Displaced::muonID_hodoAid(Tracklet &tracklet)
     return true;
 }
 
-//prop tube infomation is not used in this algorithm
 void KalmanFastTracking_Displaced::buildPropSegments()
 {
 #ifdef _DEBUG_ON
@@ -2583,7 +2616,6 @@ void KalmanFastTracking_Displaced::buildPropSegments()
     }
 }
 
-///ROOT minimizer to find the best tracklet
 int KalmanFastTracking_Displaced::fitTracklet(Tracklet &tracklet)
 {
     tracklet_curr = tracklet;
@@ -2628,7 +2660,6 @@ int KalmanFastTracking_Displaced::fitTracklet(Tracklet &tracklet)
     return status;
 }
 
-///remove similar tracklets
 int KalmanFastTracking_Displaced::reduceTrackletList(std::list<Tracklet> &tracklets)
 {
     std::list<Tracklet> targetList;
@@ -2646,7 +2677,7 @@ int KalmanFastTracking_Displaced::reduceTrackletList(std::list<Tracklet> &trackl
         {
             if (iter->stationID < nStations)
             {
-                /// XL: I don't understand the different condition statement here
+                /// What's the reason for the different conditions at St6 and St7?
                 if (iter->similarity(targetList.back()) && std::abs(targetList.back().pos_st2 - iter->pos_st2) < 3. && std::abs(targetList.back().pos_st3 - iter->pos_st3) < 3. && std::abs(targetList.back().tx - iter->tx) < 0.01 && std::abs(targetList.back().ty - iter->ty) < 0.01)
                 {
 #ifdef _DEBUG_ON_LEVEL_2
@@ -2683,7 +2714,6 @@ int KalmanFastTracking_Displaced::reduceTrackletList(std::list<Tracklet> &trackl
     return 0;
 }
 
-//Used in not displaced version to find the expected hit position in st1
 void KalmanFastTracking_Displaced::getExtrapoWindowsInSt1(Tracklet &tracklet, double *pos_exp, double *window, int st1ID)
 {
     if (tracklet.stationID != nStations - 1)
@@ -2712,7 +2742,6 @@ void KalmanFastTracking_Displaced::getExtrapoWindowsInSt1(Tracklet &tracklet, do
     }
 }
 
-//Used in not displaced version to find the expected hit position in st1
 void KalmanFastTracking_Displaced::getSagittaWindowsInSt1(Tracklet &tracklet, double *pos_exp, double *window, int st1ID)
 {
     if (tracklet.stationID != nStations - 1)
@@ -3205,7 +3234,6 @@ void KalmanFastTracking_Displaced::cutAdjuster(int numCombos, int pass)
     }
 }
 
-///XL: I don't understand what's going on here so I didn't do much modification
 bool KalmanFastTracking_Displaced::resolveStation1Hits()
 {
     if (trackletsInSt[4].size() < 2)
@@ -3420,15 +3448,15 @@ void KalmanFastTracking_Displaced::checkIntercepts(Tracklet tracklet1, Tracklet 
     return;
 }
 
-//See if flipping the "side" of a wire that hits are on can improve the quality
 void KalmanFastTracking_Displaced::checkQuality(Tracklet &tracklet)
 {
+    // tracklet.addDummyHits();///XinL: I don't know why but this makes a big difference!
     double testChisq = tracklet.chisq;
     bool gettingBetter = true;
     int passes = 0;
     while (testChisq > 20. && gettingBetter && passes < 5)
     {
-        checkSigns(tracklet); 
+        checkSigns(tracklet); // see if flipping the "side" of a wire that hits are on can improve the quality
         if (tracklet.chisq < testChisq)
         {
             testChisq = tracklet.chisq;
@@ -3441,36 +3469,6 @@ void KalmanFastTracking_Displaced::checkQuality(Tracklet &tracklet)
     }
 }
 
-void KalmanFastTracking_Displaced::checkSigns(Tracklet &tracklet)
-{
-    double compChiSq = tracklet.chisq;
-    for (std::list<SignedHit>::iterator fliped_hit = tracklet.hits.begin(); fliped_hit != tracklet.hits.end(); ++fliped_hit)
-    {
-        if (fliped_hit->hit.index < 0)
-            continue;
-
-        int detectorID = fliped_hit->hit.detectorID;
-        int index = detectorID - 1;
-        tracklet.residual[index] = fliped_hit->sign * fabs(fliped_hit->hit.driftDistance) - p_geomSvc->getDCA(detectorID, fliped_hit->hit.elementID, tracklet.tx, tracklet.ty, tracklet.x0, tracklet.y0);
-
-        if (std::abs(-1 * fliped_hit->sign * fabs(fliped_hit->hit.driftDistance) - p_geomSvc->getDCA(detectorID, fliped_hit->hit.elementID, tracklet.tx, tracklet.ty, tracklet.x0, tracklet.y0)) < std::abs(2. * tracklet.residual[index]))
-        {
-            fliped_hit->sign = -fliped_hit->sign;
-            fitTracklet(tracklet);
-            if (tracklet.calcChisq() < compChiSq)
-            {
-                compChiSq = tracklet.chisq;
-            }
-            else
-            {
-                fliped_hit->sign = -fliped_hit->sign;
-                fitTracklet(tracklet);
-            }
-        }
-    }
-}
-
-//Assign sign of the drift distance
 void KalmanFastTracking_Displaced::assignSign(SignedHit &hit, int line_index)
 {
     int is_odd = hit.hit.detectorID % 2;
