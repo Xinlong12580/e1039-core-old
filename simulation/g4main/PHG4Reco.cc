@@ -31,7 +31,6 @@
 #include <phparameter/PHParameters.h>
 
 #include <TThread.h>
-#include <TSystem.h>
 
 #include <CLHEP/Random/Random.h>
 

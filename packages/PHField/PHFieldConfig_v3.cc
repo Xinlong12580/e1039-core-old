@@ -16,7 +16,6 @@
 
 #include <cassert>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 
 using namespace std;
